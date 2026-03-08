@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌿 Escape Room: El Misterio del Mercado Campesino</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --verde: #2d6a4f;
+    --verde-claro: #52b788;
+    --verde-suave: #b7e4c7;
+    --tierra: #8b5e3c;
+    --tierra-claro: #c8956c;
+    --amarillo: #ffd166;
+    --rojo: #ef476f;
+    --azul: #118ab2;
+    --blanco: #fefefe;
+    --fondo: #f0f7ee;
+    --sombra: rgba(45,106,79,0.18);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--fondo);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ===== FONDO ANIMADO ===== */
+  body::before {
+    content: '';
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse at 10% 20%, #d8f3dc55 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 80%, #b7e4c755 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, #ffd16622 0%, transparent 70%);
+    z-index: -1;
+    animation: bgPulse 8s ease-in-out infinite alternate;
+  }
+  @keyframes bgPulse {
+    from { opacity: 0.7; }
+    to   { opacity: 1; }
+  }
+
+  /* ===== PANTALLAS ===== */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ===== HEADER / TIMER ===== */
+  #hud {
+    display: none;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: linear-gradient(135deg, var(--verde) 0%, #1b4332 100%);
+    color: white;
+    padding: 10px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 3px 16px var(--sombra);
+    flex-wrap: wrap; gap: 8px;
+  }
+  #hud.hidden { display: none !important; }
+  .hud-title { font-family: 'Fredoka One', cursive; font-size: 1.1rem; color: var(--verde-suave); }
+  .hud-timer { font-family: 'Fredoka One', cursive; font-size: 1.6rem; color: var(--amarillo); letter-spacing: 2px; }
+  .hud-level { font-size: 0.9rem; color: #b7e4c7; }
+  .hud-score { font-family: 'Fredoka One', cursive; font-size: 1.1rem; color: var(--amarillo); }
+
+  /* ===== PANTALLA DE INICIO ===== */
+  #intro {
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+  }
+  .intro-logo {
+    font-size: 5rem;
+    animation: bounce 2s ease-in-out infinite;
+    margin-bottom: 10px;
+  }
+  @keyframes bounce {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-14px); }
+  }
+  .intro-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    color: var(--verde);
+    text-shadow: 3px 3px 0 var(--verde-suave);
+    line-height: 1.1;
+    margin-bottom: 8px;
+  }
+  .intro-sub {
+    font-size: 1.15rem; color: var(--tierra); font-weight: 700;
+    margin-bottom: 24px;
+    max-width: 560px;
+  }
+  .story-box {
+    background: white;
+    border-left: 6px solid var(--verde-claro);
+    border-radius: 18px;
+    padding: 22px 28px;
+    max-width: 620px;
+    text-align: left;
+    box-shadow: 0 6px 24px var(--sombra);
+    margin-bottom: 24px;
+    font-size: 0.98rem;
+    line-height: 1.7;
+    color: #333;
+  }
+  .story-box p { margin-bottom: 10px; }
+  .story-box p:last-child { margin-bottom: 0; }
+  .story-box strong { color: var(--verde); }
+
+  .rooms-preview {
+    display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+    margin-bottom: 28px;
+  }
+  .room-badge {
+    background: linear-gradient(135deg, var(--verde), var(--verde-claro));
+    color: white; border-radius: 50px;
+    padding: 8px 18px; font-size: 0.88rem; font-weight: 700;
+    box-shadow: 0 3px 10px var(--sombra);
+  }
+
+  .btn {
+    display: inline-block; cursor: pointer; border: none;
+    font-family: 'Fredoka One', cursive; font-size: 1.3rem;
+    border-radius: 50px; padding: 14px 40px;
+    transition: all 0.2s ease; text-decoration: none;
+  }
+  .btn-verde {
+    background: linear-gradient(135deg, var(--verde-claro), var(--verde));
+    color: white; box-shadow: 0 6px 20px var(--sombra);
+  }
+  .btn-verde:hover { transform: translateY(-3px) scale(1.04); box-shadow: 0 10px 28px var(--sombra); }
+  .btn-amarillo {
+    background: linear-gradient(135deg, var(--amarillo), #f4a261);
+    color: var(--verde); box-shadow: 0 4px 16px rgba(255,209,102,0.4);
+  }
+  .btn-amarillo:hover { transform: translateY(-2px) scale(1.03); }
+  .btn-rojo {
+    background: linear-gradient(135deg, var(--rojo), #c9184a);
+    color: white; box-shadow: 0 4px 16px rgba(239,71,111,0.3);
+  }
+  .btn-rojo:hover { transform: translateY(-2px) scale(1.03); }
+  .btn-sm { font-size: 1rem; padding: 10px 26px; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+  /* ===== PANTALLA DE NIVEL ===== */
+  #level-screen {
+    min-height: 100vh;
+    padding: 90px 20px 40px;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .level-header {
+    background: linear-gradient(135deg, var(--verde), #1b4332);
+    color: white; border-radius: 20px;
+    padding: 18px 30px; max-width: 700px; width: 100%;
+    text-align: center; margin-bottom: 22px;
+    box-shadow: 0 6px 20px var(--sombra);
+  }
+  .level-header h2 { font-family: 'Fredoka One', cursive; font-size: 1.8rem; margin-bottom: 4px; }
+  .level-header p  { font-size: 0.95rem; color: var(--verde-suave); }
+
+  .story-card {
+    background: white; border-radius: 18px;
+    padding: 20px 24px; max-width: 700px; width: 100%;
+    box-shadow: 0 4px 18px var(--sombra); margin-bottom: 20px;
+    border-left: 5px solid var(--tierra-claro);
+    font-size: 0.95rem; line-height: 1.7; color: #444;
+  }
+  .story-card .narrator { font-weight: 800; color: var(--tierra); }
+  .story-card em { color: var(--verde); font-style: normal; font-weight: 700; }
+
+  .data-table {
+    width: 100%; border-collapse: collapse; margin: 14px 0;
+    font-size: 0.93rem;
+  }
+  .data-table th {
+    background: var(--verde); color: white;
+    padding: 10px 14px; text-align: left;
+  }
+  .data-table td {
+    padding: 9px 14px; border-bottom: 1px solid #e0f0e8;
+  }
+  .data-table tr:nth-child(even) td { background: #f0f7f2; }
+
+  /* Sección de ecuaciones */
+  .eq-section {
+    background: #fffde7; border-radius: 16px;
+    padding: 18px 22px; max-width: 700px; width: 100%;
+    margin-bottom: 16px; box-shadow: 0 3px 12px rgba(255,209,102,0.25);
+    border: 2px dashed var(--amarillo);
+  }
+  .eq-section h3 { font-family: 'Fredoka One', cursive; color: var(--tierra); margin-bottom: 12px; font-size: 1.1rem; }
+
+  .eq-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 12px; flex-wrap: wrap;
+  }
+  .eq-label { font-weight: 800; color: var(--verde); min-width: 80px; font-size: 0.9rem; }
+  .eq-text { font-size: 0.9rem; color: #555; flex: 1; min-width: 160px; }
+  .eq-input {
+    width: 180px; padding: 8px 12px;
+    border: 2px solid var(--verde-suave); border-radius: 10px;
+    font-size: 1rem; font-family: 'Nunito', sans-serif;
+    outline: none; transition: border 0.2s;
+    text-align: center;
+  }
+  .eq-input:focus { border-color: var(--verde-claro); }
+  .eq-input:-webkit-autofill,
+  .eq-input:-webkit-autofill:hover,
+  .eq-input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0px 1000px white inset;
+    box-shadow: 0 0 0px 1000px white inset;
+  }
+  .eq-input.correct { border-color: #2d6a4f; background: #d8f3dc; }
+  .eq-input.wrong   { border-color: var(--rojo); background: #ffe0e8; animation: shake 0.4s; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25%      { transform: translateX(-6px); }
+    75%      { transform: translateX(6px); }
+  }
+
+  /* Opciones múltiple */
+  .options-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px; max-width: 700px; width: 100%; margin-bottom: 16px;
+  }
+  .option-card {
+    background: white; border: 3px solid var(--verde-suave);
+    border-radius: 16px; padding: 14px 12px;
+    text-align: center; cursor: pointer;
+    transition: all 0.2s; font-weight: 700; color: #333;
+    box-shadow: 0 3px 10px var(--sombra);
+  }
+  .option-card:hover { border-color: var(--verde-claro); transform: translateY(-3px); }
+  .option-card.selected { border-color: var(--verde); background: var(--verde-suave); }
+  .option-card.correct  { border-color: var(--verde); background: #d8f3dc; color: var(--verde); }
+  .option-card.wrong    { border-color: var(--rojo); background: #ffe0e8; color: var(--rojo); }
+  .option-emoji { font-size: 2rem; display: block; margin-bottom: 4px; }
+
+  /* Mensaje de feedback */
+  .feedback-box {
+    max-width: 700px; width: 100%; border-radius: 16px;
+    padding: 16px 20px; margin-bottom: 16px; font-weight: 700;
+    font-size: 1rem; display: none; text-align: center;
+  }
+  .feedback-box.show { display: block; animation: fadeIn 0.3s; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  .feedback-box.ok   { background: #d8f3dc; color: #1b4332; border: 2px solid #52b788; }
+  .feedback-box.err  { background: #ffe0e8; color: #9b1a35; border: 2px solid #ef476f; }
+  .feedback-box.hint { background: #fff3cd; color: #856404; border: 2px solid #ffd166; }
+
+  /* Progreso */
+  .progress-bar-wrap {
+    max-width: 700px; width: 100%; margin-bottom: 10px;
+    background: #d8f3dc; border-radius: 50px; height: 14px;
+    overflow: hidden; box-shadow: inset 0 2px 6px rgba(0,0,0,0.1);
+  }
+  .progress-bar-fill {
+    height: 100%; background: linear-gradient(90deg, var(--verde-claro), var(--verde));
+    border-radius: 50px; transition: width 0.5s ease;
+  }
+  .progress-label {
+    max-width: 700px; width: 100%;
+    font-size: 0.85rem; color: var(--verde); font-weight: 700; margin-bottom: 16px;
+  }
+
+  /* Acciones */
+  .action-row {
+    display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+    max-width: 700px; width: 100%;
+  }
+
+  /* Pista */
+  .hint-toggle {
+    background: none; border: 2px dashed var(--tierra-claro);
+    color: var(--tierra); border-radius: 50px; padding: 8px 20px;
+    font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.9rem;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .hint-toggle:hover { background: #fff3cd; }
+
+
+  /* ===== PANTALLA VICTORIA ===== */
+  #win-screen {
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 40px 20px; text-align: center;
+  }
+  .win-emoji { font-size: 5rem; animation: spin 2s linear infinite; }
+  @keyframes spin {
+    0%  { transform: rotate(-10deg) scale(1); }
+    50% { transform: rotate(10deg) scale(1.1); }
+    100%{ transform: rotate(-10deg) scale(1); }
+  }
+  .win-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2rem, 6vw, 3.2rem);
+    color: var(--verde); margin: 16px 0 8px;
+    text-shadow: 3px 3px 0 var(--verde-suave);
+  }
+  .win-stats {
+    display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;
+    margin: 20px 0;
+  }
+  .stat-card {
+    background: white; border-radius: 18px; padding: 18px 24px;
+    box-shadow: 0 4px 16px var(--sombra); min-width: 130px;
+  }
+  .stat-num { font-family: 'Fredoka One', cursive; font-size: 2.2rem; color: var(--verde); }
+  .stat-lbl { font-size: 0.82rem; color: #888; font-weight: 700; }
+
+  .certificate {
+    background: linear-gradient(135deg, #f0fff4, #e8f8f0);
+    border: 4px solid var(--verde-claro);
+    border-radius: 20px; padding: 24px 32px; max-width: 540px;
+    margin: 20px 0;
+    box-shadow: 0 6px 24px var(--sombra);
+    position: relative; overflow: hidden;
+  }
+  .certificate::before {
+    content: '🌿🌿🌿🌿🌿🌿🌿🌿🌿🌿';
+    position: absolute; top: 8px; left: 0; right: 0;
+    text-align: center; font-size: 1.2rem; opacity: 0.4;
+    letter-spacing: 6px;
+  }
+  .certificate h3 {
+    font-family: 'Fredoka One', cursive; font-size: 1.5rem;
+    color: var(--verde); margin-bottom: 8px;
+  }
+  .certificate p { font-size: 0.95rem; color: #444; line-height: 1.6; }
+
+  /* ===== CONFETTI ===== */
+  .confetti-piece {
+    position: fixed; width: 10px; height: 10px;
+    border-radius: 2px; pointer-events: none; z-index: 999;
+    animation: confettiFall linear forwards;
+  }
+  @keyframes confettiFall {
+    0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* ===== MODALES ===== */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.5); align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: white; border-radius: 24px; padding: 28px 32px;
+    max-width: 480px; width: 100%; text-align: center;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    animation: popIn 0.3s cubic-bezier(.36,.07,.19,.97);
+  }
+  @keyframes popIn {
+    from { transform: scale(0.7); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+  .modal-emoji { font-size: 4rem; margin-bottom: 12px; display: block; }
+  .modal-box h3 { font-family: 'Fredoka One', cursive; font-size: 1.6rem; color: var(--verde); margin-bottom: 10px; }
+  .modal-box p  { color: #555; line-height: 1.6; margin-bottom: 20px; font-size: 0.95rem; }
+
+  /* Decoraciones */
+  .leaf { display: inline-block; }
+  .tag  {
+    display: inline-block; background: var(--verde-suave);
+    color: var(--verde); border-radius: 50px; padding: 3px 12px;
+    font-size: 0.8rem; font-weight: 700; margin: 2px;
+  }
+
+  /* Responsive */
+  @media (max-width: 480px) {
+    .eq-row { flex-direction: column; align-items: flex-start; }
+    .eq-input { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HUD (aparece durante el juego) -->
+<div id="hud" class="hidden">
+  <div class="hud-title">🌿 Mercado Matemático</div>
+  <div id="hud-level" class="hud-level">Sala 1</div>
+  <div id="timer" class="hud-timer">40:00</div>
+  <div id="hud-score" class="hud-score">⭐ 0 pts</div>
+  <button id="music-btn" onclick="toggleMusic()" style="background:none;border:2px solid #b7e4c7;color:#b7e4c7;border-radius:50px;padding:4px 14px;font-size:0.85rem;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;">🔊 Música</button>
+</div>
+
+<!-- ===================== PANTALLA DE INICIO ===================== -->
+<div id="intro" class="screen active">
+  <div class="intro-logo">🌽</div>
+  <h1 class="intro-title">El Misterio del<br>Mercado Campesino</h1>
+  <p class="intro-sub">🔐 Escape Room Digital · Sistemas de Ecuaciones 3×3 · Grado 9°</p>
+
+  <div class="story-box">
+    <p><strong>¡Emergencia en la vereda Hojas Anchas!</strong> 🚨</p>
+    <p>Don Manuel, Doña Rosa y Don Luis llegaron al mercado de Guarne con sus cosechas de fríjol, maíz y papa. Pero alguien <strong>mezcló todas las etiquetas de precios</strong> y nadie sabe cuánto cuesta cada producto.</p>
+    <p>El mercado no puede abrir hasta que los precios sean correctos. Las familias perderán sus ganancias si no resuelven el misterio a tiempo. ¡Solo un equipo de <strong>matemáticos investigadores</strong> puede salvarlos!</p>
+    <p>Tienes <strong>40 minutos</strong> para recorrer las 4 salas del mercado, resolver los acertijos matemáticos y descubrir todos los precios. 🕵️‍♀️</p>
+  </div>
+
+  <div class="rooms-preview">
+    <div class="room-badge">🧺 Sala 1 · Las Ecuaciones</div>
+    <div class="room-badge">🔢 Sala 2 · Método Reducción</div>
+    <div class="room-badge">🧮 Sala 3 · Método Cramer</div>
+    <div class="room-badge">🏆 Sala 4 · Reto Final</div>
+  </div>
+
+  <button class="btn btn-verde" onclick="showHistoria()">🌿 ¡Comenzar la Misión!</button>
+</div>
+
+
+<!-- ===================== PANTALLA DE HISTORIA ===================== -->
+<div id="historia-screen" class="screen">
+  <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;">
+
+    <div style="font-size:3.5rem;margin-bottom:10px;animation:bounce 2s ease-in-out infinite;">🌱</div>
+    <h2 style="font-family:'Fredoka One',cursive;font-size:clamp(1.6rem,5vw,2.4rem);color:var(--verde);text-align:center;margin-bottom:24px;text-shadow:2px 2px 0 var(--verde-suave);">
+      "El Cultivo Comunitario de las Tres Familias"
+    </h2>
+
+    <div class="story-box" style="max-width:660px;font-size:0.97rem;">
+      <p>En la vereda <strong>Hojas Anchas</strong>, en el municipio de Guarne, tres familias campesinas decidieron unirse para aprovechar mejor sus tierras y trabajar en comunidad. La idea era sencilla pero poderosa: sembrar <strong>fríjol, maíz y papa</strong> juntos en un lote compartido, para luego dividir las ganancias de acuerdo con lo que cada uno había sembrado.</p>
+
+      <p>La propuesta surgió en una tarde de domingo, bajo el árbol de aguacate Hass más grande de la vereda. <strong>Don Manuel</strong>, conocido por su experiencia en la siembra de papa, dijo:</p>
+      <p style="padding:8px 16px;border-left:4px solid var(--verde-claro);background:#f0fff4;border-radius:0 8px 8px 0;font-style:italic;color:#1b4332;">
+        — "Si unimos esfuerzos, podemos vender más y obtener mejores precios en la plaza de mercado de Guarne."
+      </p>
+
+      <p><strong>Doña Rosa</strong>, experta en el cultivo de fríjol, respondió:</p>
+      <p style="padding:8px 16px;border-left:4px solid var(--tierra-claro);background:#fff8f2;border-radius:0 8px 8px 0;font-style:italic;color:#6b3a1f;">
+        — "Sí, pero debemos ser justos. Cada hectárea de fríjol, maíz y papa no vale lo mismo. ¿Cómo sabemos cuánto nos corresponde exactamente a cada uno?"
+      </p>
+
+      <p>Y entonces habló <strong>Don Luis</strong>, que llevaba años sembrando maíz:</p>
+      <p style="padding:8px 16px;border-left:4px solid var(--amarillo);background:#fffde7;border-radius:0 8px 8px 0;font-style:italic;color:#7a5c00;">
+        — "Hagamos cuentas claras desde el principio, para que no haya problemas después. Si sabemos cuánto deja cada cultivo por hectárea, podremos dividir las ganancias justamente."
+      </p>
+
+      <p>Con entusiasmo, las familias organizaron la primera siembra comunitaria. Después de la cosecha, se registraron los siguientes resultados:</p>
+
+      <table class="data-table" style="margin-top:10px;">
+        <tr><th>Familia</th><th>Fríjol (ha)</th><th>Maíz (ha)</th><th>Papa (ha)</th><th>Ganancia</th></tr>
+        <tr><td>Doña Rosa</td><td>3</td><td>2</td><td>1</td><td>$3.200.000</td></tr>
+        <tr><td>Don Luis</td><td>2</td><td>2</td><td>2</td><td>$3.600.000</td></tr>
+        <tr><td>Don Manuel</td><td>1</td><td>3</td><td>2</td><td>$3.800.000</td></tr>
+      </table>
+    </div>
+
+    <p style="color:var(--tierra);font-weight:700;font-size:1rem;margin-bottom:20px;text-align:center;">
+      🕵️‍♀️ ¿Podrás descubrir cuánto gana cada familia por hectárea?<br>
+      <span style="font-size:0.88rem;color:#888;">Tienes 40 minutos para resolver el misterio.</span>
+    </p>
+
+    <button class="btn btn-verde" onclick="startGame()">🌿 ¡Aceptar la Misión!</button>
+  </div>
+</div>
+
+<!-- ===================== PANTALLA DE NIVEL ===================== -->
+<div id="level-screen" class="screen">
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
+  </div>
+  <div class="progress-label" id="progress-label">Sala 1 de 4</div>
+
+  <div class="level-header">
+    <h2 id="level-title">🧺 Sala 1</h2>
+    <p id="level-subtitle">Plantea las ecuaciones correctas</p>
+  </div>
+
+  <div class="story-card" id="story-card">
+    <!-- Historia dinámica -->
+  </div>
+
+  <div class="eq-section" id="question-section">
+    <!-- Preguntas dinámicas -->
+  </div>
+
+  <div class="feedback-box" id="feedback"></div>
+
+  <div class="action-row">
+    <button class="hint-toggle" id="hint-btn" onclick="showHint()" style="display:none;">💡 Pista</button>
+    <button class="btn btn-amarillo btn-sm" id="check-btn" onclick="checkAnswer()">✔ Verificar</button>
+  </div>
+</div>
+
+<!-- ===================== PANTALLA DE VICTORIA ===================== -->
+<div id="win-screen" class="screen">
+  <span class="win-emoji">🏆</span>
+  <h2 class="win-title">¡Misterio Resuelto!</h2>
+  <p style="color:#555;font-size:1.05rem;max-width:500px;">El mercado de la vereda Hojas Anchas ya puede abrir sus puertas. ¡Las familias campesinas te lo agradecen! 🌽🫘🥔</p>
+
+  <div class="win-stats">
+    <div class="stat-card">
+      <div class="stat-num" id="final-time">--:--</div>
+      <div class="stat-lbl">⏱ Tiempo</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="final-score">0</div>
+      <div class="stat-lbl">⭐ Puntos</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="final-hints">0</div>
+      <div class="stat-lbl">💡 Pistas usadas</div>
+    </div>
+  </div>
+
+  <div class="certificate">
+    <h3>🌿 Certificado de Investigador</h3>
+    <p>Este estudiante demostró dominar la formulación y resolución de <strong>sistemas de ecuaciones lineales 3×3</strong> mediante los métodos de <strong>Reducción y Cramer</strong>, aplicados en contextos del campo colombiano.</p>
+    <p style="margin-top:10px;font-size:0.85rem;color:#888;">Institución Educativa Rural Hojas Anchas · Guarne</p>
+  </div>
+
+  <button class="btn btn-verde" onclick="restartGame()">🔄 Jugar de Nuevo</button>
+</div>
+
+<!-- ===================== MODALES ===================== -->
+<div class="modal-overlay" id="modal-level-complete">
+  <div class="modal-box">
+    <span class="modal-emoji" id="modal-emoji">🎉</span>
+    <h3 id="modal-title">¡Sala Superada!</h3>
+    <p id="modal-msg">Excelente trabajo, investigador.</p>
+    <button class="btn btn-verde btn-sm" onclick="nextLevel()">Siguiente Sala →</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-timeout">
+  <div class="modal-box">
+    <span class="modal-emoji">⏰</span>
+    <h3>¡Se acabó el tiempo!</h3>
+    <p>El mercado no pudo abrir hoy. Pero el aprendizaje queda. ¿Volvemos a intentarlo?</p>
+    <button class="btn btn-verde btn-sm" onclick="restartGame()">🔄 Intentar de Nuevo</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  CONFIGURACIÓN DEL JUEGO
+// ============================================================
+const TOTAL_TIME = 40 * 60; // 40 minutos en segundos
+let timerSeconds = TOTAL_TIME;
+let timerInterval = null;
+let currentLevel = 0;
+let score = 0;
+let hintsUsed = 0;
+let attempts = {}; // intentos por nivel
+
+// ============================================================
+//  NIVELES / SALAS
+// ============================================================
+const levels = [
+  // ---- SALA 1: Plantear ecuaciones ----
+  {
+    title: "🧺 Sala 1 · El Registro de la Cosecha",
+    subtitle: "Convierte la historia en ecuaciones",
+    story: `
+      <p><span class="narrator">🌾 Situación:</span> Después de la primera cosecha comunitaria en la vereda Hojas Anchas, los campesinos registraron estos resultados. Tú eres el contador del grupo y debes <em>escribir las tres ecuaciones</em> que representan las ganancias:</p>
+      <table class="data-table">
+        <tr><th>Familia</th><th>Fríjol (ha)</th><th>Maíz (ha)</th><th>Papa (ha)</th><th>Ganancia</th></tr>
+        <tr><td>Doña Rosa</td><td>3</td><td>2</td><td>1</td><td>$3.200.000</td></tr>
+        <tr><td>Don Luis</td><td>2</td><td>2</td><td>2</td><td>$3.600.000</td></tr>
+        <tr><td>Don Manuel</td><td>1</td><td>3</td><td>2</td><td>$3.800.000</td></tr>
+      </table>
+    `,
+    type: "fill",
+    questions: [
+      { label: "Ecuación 1 (Doña Rosa):", placeholder: "", answer: "3f+2m+p=3.200.000" },
+      { label: "Ecuación 2 (Don Luis):", placeholder: "", answer: "2f+2m+2p=3.600.000" },
+      { label: "Ecuación 3 (Don Manuel):", placeholder: "", answer: "f+3m+2p=3.800.000" }
+    ],
+    hint: "💡 Para escribir una ecuación matemática, define dos expresiones equivalentes separadas por un signo igual (=), usando variables (letras), números y operadores (+, -, x, ÷).",
+    points: 150,
+    emoji: "🌾",
+    msg: "¡Perfectas ecuaciones! Ya tenemos el sistema planteado. ¡Ahora a resolverlo!"
+  },
+
+  // ---- SALA 2: Método de Reducción ----
+  {
+    title: "🔢 Sala 2 · La Tienda del Mercado",
+    subtitle: "Resuelve el sistema usando sustitución, reducción, igualación o determinantes",
+    story: `
+      <p><span class="narrator">🏪 Situación:</span> En el mercado de Guarne, tres amigos compraron arepas (a), huevos (h) y libras de maíz (m). Nadie recuerda los precios. ¡Usa el método que prefieras — <em>sustitución, reducción, igualación o determinantes</em> — para descubrir el precio de cada producto!</p>
+      <table class="data-table">
+        <tr><th>Comprador</th><th>Arepas</th><th>Huevos</th><th>Maíz</th><th>Total</th></tr>
+        <tr><td>Juan</td><td>1</td><td>1</td><td>1</td><td>$4.700</td></tr>
+        <tr><td>Ana</td><td>3</td><td>5</td><td>3</td><td>$15.100</td></tr>
+        <tr><td>Pedro</td><td>2</td><td>3</td><td>1</td><td>$8.200</td></tr>
+      </table>
+    `,
+    type: "multiple",
+    question: "¿Cuáles son los precios correctos de cada producto?",
+    options: [
+      { text: "🥚 Huevo = $1.200\n🌽 Maíz = $1.500\n🫓 Arepa = $2.000", value: "A", emoji: "🥚" },
+      { text: "🥚 Huevo = $500\n🌽 Maíz = $1.700\n🫓 Arepa = $2.500", value: "B", emoji: "🫓" },
+      { text: "🥚 Huevo = $1.500\n🌽 Maíz = $700\n🫓 Arepa = $2.500", value: "C", emoji: "🫘" },
+      { text: "🥚 Huevo = $700\n🌽 Maíz = $2.000\n🫓 Arepa = $2.000", value: "D", emoji: "🌽" }
+    ],
+    answer: "B",
+    hint: "🎵 ¿Necesitas ayuda con el método? ¡Escucha esta canción! <a href='https://suno.com/s/7qiCVwJxXV0hUn5n' target='_blank' style='color:var(--verde);font-weight:800;text-decoration:underline;'>👉 Canción del Método Cramer</a>",
+    points: 200,
+    emoji: "🛒",
+    msg: "¡Exacto! Arepa = $2.500, Huevo = $500 y Maíz = $1.700. ¡Muy bien aplicado el método!"
+  },
+
+  // ---- SALA 3: Método de Cramer ----
+  {
+    title: "🧮 Sala 3 · El Misterio de las Cestas de Frutas",
+    subtitle: "Aplica el Método de Cramer para descubrir el precio de cada cesta",
+    story: `
+      <p><span class="narrator">🧺 ¡Los retamos a convertirse en matemáticos investigadores!</span></p>
+      <p>En el mercado campesino se venden tres tipos de cestas de frutas. Tu misión, si decides aceptarla, es <em>descubrir el precio de cada cesta</em>, sabiendo que:</p>
+      <ul style="margin:12px 0 12px 20px;line-height:2;">
+        <li><strong>Cesta A</strong> 🍎🍌🍊 contiene manzanas, bananos y naranjas.</li>
+        <li><strong>Cesta B</strong> 🍎🍌 contiene manzanas y bananos.</li>
+        <li><strong>Cesta C</strong> 🍌🍊 contiene bananos y naranjas.</li>
+      </ul>
+      <p>Un cliente compró de la siguiente manera:</p>
+      <table class="data-table">
+        <tr><th>Compra</th><th>Cesta A</th><th>Cesta B</th><th>Cesta C</th><th>Total pagado</th></tr>
+        <tr><td>Compra 1</td><td>1</td><td>1</td><td>1</td><td>$103.000</td></tr>
+        <tr><td>Compra 2</td><td>2</td><td>1</td><td>0</td><td>$120.000</td></tr>
+        <tr><td>Compra 3</td><td>1</td><td>0</td><td>2</td><td>$74.000</td></tr>
+      </table>
+    `,
+    type: "steps",
+    steps: [
+      {
+        question: "¿Cuánto vale el determinante D?",
+        placeholder: "",
+        answer: "-3",
+        label: "Determinante D ="
+      },
+      {
+        question: "¿Cuál es el precio de la Cesta A?",
+        placeholder: "",
+        answer: "36000",
+        label: "Precio Cesta A = $"
+      },
+      {
+        question: "¿Cuál es el precio de la Cesta B?",
+        placeholder: "",
+        answer: "48000",
+        label: "Precio Cesta B = $"
+      },
+      {
+        question: "¿Cuál es el precio de la Cesta C?",
+        placeholder: "",
+        answer: "19000",
+        label: "Precio Cesta C = $"
+      }
+    ],
+    currentStep: 0,
+    hint: "🎵 ¿Necesitas ayuda con el Método de Cramer? ¡Escucha esta canción! <a href='https://suno.com/s/7qiCVwJxXV0hUn5n' target='_blank' style='color:var(--verde);font-weight:800;text-decoration:underline;'>👉 Canción del Método Cramer</a>",
+    points: 300,
+    emoji: "🧺",
+    msg: "¡Brillante investigador! Cesta A = $36.000, Cesta B = $48.000, Cesta C = $19.000. ¡Ya falta solo el Reto Final!"
+  },
+
+  // ---- SALA 4: Reto Final ----
+  {
+    title: "🏆 Sala 4 · El Gran Reto del Mercado",
+    subtitle: "¡Resuelve el problema final y desbloquea el mercado!",
+    story: `
+      <p><span class="narrator">🚨 Reto Final:</span> Las tres familias campesinas necesitan tu ayuda una última vez. Para poder dividir las ganancias de la próxima cosecha, deben saber el precio por hectárea de cada cultivo. ¡Esta es la prueba definitiva!</p>
+      <table class="data-table">
+        <tr><th>Familia</th><th>Fríjol</th><th>Maíz</th><th>Papa</th><th>Ganancia</th></tr>
+        <tr><td>Doña Rosa</td><td>3 ha</td><td>2 ha</td><td>1 ha</td><td>$3.200.000</td></tr>
+        <tr><td>Don Luis</td><td>2 ha</td><td>2 ha</td><td>2 ha</td><td>$3.600.000</td></tr>
+        <tr><td>Don Manuel</td><td>1 ha</td><td>3 ha</td><td>2 ha</td><td>$3.800.000</td></tr>
+      </table>
+    `,
+    type: "fill",
+    questions: [
+      { label: "Precio por ha de Fríjol ($):", placeholder: "", answer: "400000" },
+      { label: "Precio por ha de Maíz ($):", placeholder: "", answer: "600000" },
+      { label: "Precio por ha de Papa ($):", placeholder: "", answer: "800000" }
+    ],
+    hint: "",
+    points: 400,
+    emoji: "🌟",
+    msg: "¡INCREÍBLE! ¡Resolviste el Gran Reto! El mercado de la vereda Hojas Anchas ya puede abrir sus puertas. ¡Eres un verdadero matemático investigador!"
+  }
+];
+
+// ============================================================
+//  ESTADO DEL JUEGO
+// ============================================================
+let gameStarted = false;
+let levelAnswers = {};
+let stepsAnswered = 0;
+
+function showHistoria() {
+  showScreen('historia-screen');
+}
+
+function startGame() {
+  gameStarted = true;
+  currentLevel = 0;
+  score = 0;
+  hintsUsed = 0;
+  timerSeconds = TOTAL_TIME;
+  stepsAnswered = 0;
+  startMusic();
+
+  showScreen('level-screen');
+  document.getElementById('hud').classList.remove('hidden');
+  document.getElementById('hud').style.display = 'flex';
+
+  startTimer();
+  renderLevel();
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ============================================================
+//  TIMER
+// ============================================================
+function startTimer() {
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timerSeconds--;
+    updateTimerDisplay();
+    if (timerSeconds <= 0) {
+      clearInterval(timerInterval);
+      document.getElementById('modal-timeout').classList.add('open');
+    }
+    if (timerSeconds <= 300) {
+      document.getElementById('timer').style.color = '#ef476f';
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+  const s = (timerSeconds % 60).toString().padStart(2, '0');
+  document.getElementById('timer').textContent = `${m}:${s}`;
+}
+
+// ============================================================
+//  RENDER NIVEL
+// ============================================================
+function renderLevel() {
+  const lv = levels[currentLevel];
+  levelAnswers = {};
+  stepsAnswered = (lv.type === 'steps') ? (lv.currentStep || 0) : 0;
+
+  // Limpiar cualquier feedback visible de la sala anterior
+  const fb = document.getElementById('feedback');
+  fb.textContent = '';
+  fb.className = 'feedback-box';
+
+  // HUD
+  document.getElementById('hud-level').textContent = `Sala ${currentLevel + 1}/4`;
+  document.getElementById('hud-score').textContent = `⭐ ${score} pts`;
+
+  // Progreso
+  const pct = (currentLevel / levels.length) * 100;
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = `Sala ${currentLevel + 1} de ${levels.length}`;
+
+  // Cabecera
+  document.getElementById('level-title').textContent = lv.title;
+  document.getElementById('level-subtitle').textContent = lv.subtitle;
+
+  // Historia
+  document.getElementById('story-card').innerHTML = lv.story;
+
+  // Preguntas
+  const qs = document.getElementById('question-section');
+  let html = '';
+
+  if (lv.type === 'fill') {
+    html = `<h3>✏️ Completa los espacios:</h3>`;
+    lv.questions.forEach((q, i) => {
+      html += `
+        <div class="eq-row">
+          <span class="eq-label">${q.label}</span>
+          <input class="eq-input" id="ans-${i}" placeholder="${q.placeholder}" oninput="clearFeedback()" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+        </div>`;
+    });
+  } else if (lv.type === 'multiple') {
+    html = `<h3>🤔 ${lv.question}</h3>`;
+    qs.innerHTML = html;
+    qs.innerHTML += '<div class="options-grid" id="opts-grid"></div>';
+    lv.options.forEach(opt => {
+      const card = document.createElement('div');
+      card.className = 'option-card';
+      card.onclick = () => selectOption(card, opt.value);
+      card.innerHTML = `<span class="option-emoji">${opt.emoji}</span>${opt.text.replace(/\n/g,'<br>')}`;
+      document.getElementById('opts-grid').appendChild(card);
+    });
+    hideFeedback();
+    const fbm = document.getElementById('feedback');
+    fbm.textContent = '';
+    fbm.className = 'feedback-box';
+    return;
+  } else if (lv.type === 'steps') {
+    html = renderStep(lv, lv.currentStep || 0);
+  }
+
+  qs.innerHTML = html;
+  hideFeedback();
+  // Mostrar botón de pista solo si el nivel tiene pista definida
+  const hintBtn = document.getElementById('hint-btn');
+  if (hintBtn) {
+    hintBtn.style.display = (lv.hint && lv.hint.trim() !== "") ? 'inline-block' : 'none';
+  }
+}
+
+function renderStep(lv, stepIdx) {
+  const step = lv.steps[stepIdx];
+  return `
+    <h3>🔢 Paso ${stepIdx + 1} de ${lv.steps.length}: ${step.question}</h3>
+    <div class="eq-row">
+      <span class="eq-label">${step.label}</span>
+      <input class="eq-input" id="ans-step" placeholder="${step.placeholder}" oninput="clearFeedback()" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    </div>
+    <p style="font-size:0.82rem;color:#888;margin-top:8px;">Progreso del método: ${stepIdx + 1}/${lv.steps.length} pasos</p>
+  `;
+}
+
+function selectOption(card, value) {
+  document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  levelAnswers['selected'] = value;
+  clearFeedback();
+}
+
+// ============================================================
+//  VERIFICAR RESPUESTA
+// ============================================================
+function checkAnswer() {
+  const lv = levels[currentLevel];
+  clearFeedback();
+
+  if (lv.type === 'fill') {
+    let allCorrect = true;
+    let anyFilled = false;
+    lv.questions.forEach((q, i) => {
+      const input = document.getElementById(`ans-${i}`);
+      if (!input) return;
+      const normalize = s => s.trim().toLowerCase().replace(/\s/g,'').replace(/\$/g,'').replace(/\./g,'').replace(/,/g,'');
+      const val = normalize(input.value);
+      const ans = normalize(q.answer);
+      anyFilled = anyFilled || val.length > 0;
+      if (val === ans) {
+        input.classList.add('correct');
+        input.classList.remove('wrong');
+      } else {
+        input.classList.add('wrong');
+        input.classList.remove('correct');
+        allCorrect = false;
+      }
+    });
+    if (!anyFilled) { showFeedback("Escribe tu respuesta primero 📝", 'hint'); return; }
+    if (allCorrect) {
+      addScore(lv.points);
+      showLevelComplete(lv);
+    } else {
+      attempts[currentLevel] = (attempts[currentLevel] || 0) + 1;
+      const penalty = Math.min(attempts[currentLevel] * 10, 50);
+      showFeedback(`❌ Hmm, revisa las respuestas en rojo. Cada intento resta ${penalty} puntos. Recuerda usar el mismo formato del ejemplo.`, 'err');
+    }
+  } else if (lv.type === 'multiple') {
+    const sel = levelAnswers['selected'];
+    if (!sel) { showFeedback("Selecciona una opción primero 👆", 'hint'); return; }
+    if (sel === lv.answer) {
+      document.querySelectorAll('.option-card').forEach(c => {
+        if (c.classList.contains('selected')) c.classList.add('correct');
+      });
+      addScore(lv.points);
+      setTimeout(() => showLevelComplete(lv), 600);
+    } else {
+      document.querySelectorAll('.option-card').forEach(c => {
+        if (c.classList.contains('selected')) c.classList.add('wrong');
+      });
+      attempts[currentLevel] = (attempts[currentLevel] || 0) + 1;
+      showFeedback("❌ Esa no es la respuesta correcta. Verifica tus cálculos paso a paso con el Método de Reducción. Recuerda: verifica sustituyendo en las ecuaciones originales.", 'err');
+    }
+  } else if (lv.type === 'steps') {
+    const stepIdx = lv.currentStep || 0;
+    const step = lv.steps[stepIdx];
+    const input = document.getElementById('ans-step');
+    if (!input || !input.value.trim()) { showFeedback("Escribe tu respuesta 📝", 'hint'); return; }
+    const normalize2 = s => s.trim().toLowerCase().replace(/\s/g,'').replace(/\$/g,'').replace(/\./g,'').replace(/,/g,'');
+    const val = normalize2(input.value);
+    const ans = normalize2(step.answer);
+    if (val === ans) {
+      input.classList.add('correct');
+      addScore(Math.floor(lv.points / lv.steps.length));
+      lv.currentStep = stepIdx + 1;
+      if (lv.currentStep >= lv.steps.length) {
+        setTimeout(() => showLevelComplete(lv), 500);
+      } else {
+        showFeedback(`✅ ¡Correcto! Paso ${stepIdx + 1} completado. ¡Sigue al siguiente paso!`, 'ok');
+        setTimeout(() => {
+          document.getElementById('question-section').innerHTML = renderStep(lv, lv.currentStep);
+          hideFeedback();
+        }, 1500);
+      }
+    } else {
+      input.classList.add('wrong');
+      attempts[currentLevel] = (attempts[currentLevel] || 0) + 1;
+      showFeedback(`❌ Revisa tu cálculo. Inténtalo de nuevo 💪`, 'err');
+    }
+  }
+}
+
+function addScore(pts) {
+  // Bonus por tiempo restante (más rápido = más puntos)
+  const timeBonus = Math.floor(timerSeconds / 60) * 2;
+  const hintPenalty = hintsUsed * 15;
+  const earned = Math.max(pts + timeBonus - hintPenalty, Math.floor(pts * 0.3));
+  score += earned;
+  document.getElementById('hud-score').textContent = `⭐ ${score} pts`;
+}
+
+// ============================================================
+//  FEEDBACK
+// ============================================================
+function showFeedback(msg, type) {
+  const fb = document.getElementById('feedback');
+  fb.innerHTML = msg;
+  fb.className = `feedback-box show ${type}`;
+}
+function hideFeedback() {
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback-box';
+}
+function clearFeedback() { hideFeedback(); }
+
+
+// ============================================================
+//  LEVEL COMPLETE
+// ============================================================
+function showLevelComplete(lv) {
+  document.getElementById('modal-emoji').textContent = lv.emoji;
+  document.getElementById('modal-title').textContent = currentLevel < levels.length - 1 ? '¡Sala Superada! 🎉' : '¡MISIÓN COMPLETADA! 🏆';
+  document.getElementById('modal-msg').textContent = lv.msg;
+
+  const nextBtn = document.querySelector('#modal-level-complete .btn');
+  if (currentLevel >= levels.length - 1) {
+    nextBtn.textContent = '🏆 Ver Resultados Finales';
+    nextBtn.onclick = () => { document.getElementById('modal-level-complete').classList.remove('open'); endGame(); };
+  } else {
+    nextBtn.textContent = 'Siguiente Sala →';
+    nextBtn.onclick = () => nextLevel();
+  }
+
+  document.getElementById('modal-level-complete').classList.add('open');
+  if (currentLevel >= levels.length - 1) spawnConfetti();
+}
+
+function nextLevel() {
+  document.getElementById('modal-level-complete').classList.remove('open');
+  if (currentLevel < levels.length - 1) {
+    currentLevel++;
+    if (levels[currentLevel].type === 'steps') levels[currentLevel].currentStep = 0;
+    renderLevel();
+  } else {
+    endGame();
+  }
+}
+
+// ============================================================
+//  FIN DEL JUEGO
+// ============================================================
+function endGame() {
+  stopMusic();
+  clearInterval(timerInterval);
+  const elapsed = TOTAL_TIME - timerSeconds;
+  const m = Math.floor(elapsed / 60).toString().padStart(2,'0');
+  const s = (elapsed % 60).toString().padStart(2,'0');
+
+  document.getElementById('final-time').textContent = `${m}:${s}`;
+  document.getElementById('final-score').textContent = score;
+  document.getElementById('final-hints').textContent = hintsUsed;
+
+  document.getElementById('hud').classList.add('hidden');
+  showScreen('win-screen');
+  spawnConfetti();
+}
+
+function restartGame() {
+  stopMusic();
+  document.getElementById('modal-timeout').classList.remove('open');
+  document.getElementById('modal-level-complete').classList.remove('open');
+  levels.forEach(lv => { if (lv.type === 'steps') lv.currentStep = 0; });
+  attempts = {};
+  document.getElementById('hud').classList.add('hidden');
+  showScreen('intro');
+  clearInterval(timerInterval);
+}
+
+// ============================================================
+//  CONFETTI
+// ============================================================
+function spawnConfetti() {
+  const colors = ['#52b788','#ffd166','#ef476f','#118ab2','#8b5e3c','#b7e4c7'];
+  for (let i = 0; i < 80; i++) {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      el.style.left = Math.random() * 100 + 'vw';
+      el.style.background = colors[Math.floor(Math.random() * colors.length)];
+      el.style.width = (8 + Math.random() * 8) + 'px';
+      el.style.height = (8 + Math.random() * 8) + 'px';
+      el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+      el.style.animationDuration = (2 + Math.random() * 3) + 's';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 5000);
+    }, i * 40);
+  }
+}
+
+
+// ============================================================
+//  PISTA
+// ============================================================
+function showHint() {
+  const lv = levels[currentLevel];
+  if (lv.hint && lv.hint.trim() !== "") {
+    showFeedback(lv.hint, 'hint');
+    hintsUsed++;
+  }
+}
+
+// ============================================================
+//  MÚSICA — MISIÓN IMPOSIBLE (Web Audio API)
+// ============================================================
+let audioCtx = null;
+let musicNodes = [];
+let musicPlaying = false;
+let musicInterval = null;
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function playNote(freq, time, duration, volume=0.10, type='square') {
+  if (!audioCtx || !musicPlaying) return;
+  const osc  = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.value = 1200;
+  filter.Q.value = 0.8;
+  osc.connect(filter);
+  filter.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, time);
+  gain.gain.setValueAtTime(0, time);
+  gain.gain.linearRampToValueAtTime(volume, time + 0.02);
+  gain.gain.setValueAtTime(volume, time + duration - 0.04);
+  gain.gain.linearRampToValueAtTime(0, time + duration);
+  osc.start(time);
+  osc.stop(time + duration + 0.05);
+  musicNodes.push(osc);
+}
+
+function playDrum(time, volume=0.18) {
+  if (!audioCtx || !musicPlaying) return;
+  // Bombo
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(160, time);
+  osc.frequency.exponentialRampToValueAtTime(40, time + 0.12);
+  gain.gain.setValueAtTime(volume, time);
+  gain.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
+  osc.start(time); osc.stop(time + 0.16);
+  musicNodes.push(osc);
+  // Hi-hat
+  const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.05, audioCtx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1);
+  const src = audioCtx.createBufferSource();
+  const hgain = audioCtx.createGain();
+  const hfilter = audioCtx.createBiquadFilter();
+  hfilter.type = 'highpass'; hfilter.frequency.value = 6000;
+  src.buffer = buf;
+  src.connect(hfilter); hfilter.connect(hgain); hgain.connect(audioCtx.destination);
+  hgain.gain.setValueAtTime(0.06, time);
+  hgain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+  src.start(time);
+  musicNodes.push(src);
+}
+
+function scheduleMissionImpossible(startTime) {
+  // ══════════════════════════════════════════════
+  // MISIÓN IMPOSIBLE — tema principal
+  // Compás en 5/4. BPM ≈ 140 → beat = 0.4286 s
+  // ══════════════════════════════════════════════
+  const B = 60 / 140; // duración de un beat (≈0.4286 s)
+  const t = startTime;
+
+  // --- Notas del tema (frecuencias en Hz) ---
+  // E4=329.63  F4=349.23  G4=392  Ab4=415.3
+  // A4=440     Bb4=466.16 B4=493.88 C5=523.25
+  // D5=587.33  Eb5=622.25 E5=659.25
+  const E4=329.63, F4=349.23, G4=392.00, Ab4=415.30;
+  const A4=440.00, Bb4=466.16, B4=493.88, C5=523.25;
+  const D5=587.33, Eb5=622.25, E5=659.25;
+  const Db5=554.37, Gb4=369.99;
+
+  // Melodía principal (compases 1-4) — patrón icónico
+  const mel = [
+    // Compás 1 (5 beats)
+    [E4, t+0*B, 0.18],
+    [E4, t+0.25*B, 0.18],
+    [F4, t+0.5*B, 0.35],
+    [E4, t+1*B, 0.18],
+    [E4, t+1.25*B, 0.18],
+    [Eb5, t+1.5*B, 0.35],
+    [E4, t+2*B, 0.18],
+    [E4, t+2.25*B, 0.18],
+    [D5, t+2.5*B, 0.35],
+    [C5, t+3*B, 0.5*B],
+    [B4, t+3.5*B, 0.5*B],
+    [Bb4, t+4*B, B*0.9],
+    // Compás 2 (5 beats)
+    [A4, t+5*B, 0.18],
+    [A4, t+5.25*B, 0.18],
+    [Bb4, t+5.5*B, 0.35],
+    [A4, t+6*B, 0.18],
+    [A4, t+6.25*B, 0.18],
+    [Eb5, t+6.5*B, 0.35],
+    [A4, t+7*B, 0.18],
+    [A4, t+7.25*B, 0.18],
+    [D5, t+7.5*B, 0.35],
+    [C5, t+8*B, 0.5*B],
+    [B4, t+8.5*B, 0.5*B],
+    [Bb4, t+9*B, B*0.9],
+    // Compás 3 — subida dramática
+    [E4, t+10*B, 0.18],
+    [E4, t+10.25*B, 0.18],
+    [F4, t+10.5*B, 0.35],
+    [E4, t+11*B, 0.18],
+    [E4, t+11.25*B, 0.18],
+    [Eb5, t+11.5*B, 0.35],
+    [E5, t+12*B, 0.5*B],
+    [Eb5, t+12.5*B, 0.5*B],
+    [D5, t+13*B, 0.5*B],
+    [Db5, t+13.5*B, 0.5*B],
+    [C5, t+14*B, B*0.9],
+    // Compás 4 — resolución
+    [B4,  t+15*B, 0.5*B],
+    [Bb4, t+15.5*B, 0.5*B],
+    [A4,  t+16*B, B],
+    [G4,  t+17*B, B],
+    [Ab4, t+18*B, B],
+    [A4,  t+19*B, B*0.9],
+  ];
+
+  mel.forEach(([freq, start, dur]) => {
+    playNote(freq, start, dur, 0.11, 'square');
+    // Sombra una octava abajo para dar cuerpo
+    playNote(freq/2, start, dur, 0.04, 'sine');
+  });
+
+  // Bajo pulsante (patrón de 5/4 característico)
+  const bassNotes = [E4/2, E4/2, F4/2, E4/2, Eb5/2];
+  for (let c = 0; c < 4; c++) {
+    for (let b = 0; b < 5; b++) {
+      const bt = t + (c*5 + b) * B;
+      playNote(bassNotes[b % bassNotes.length], bt, B*0.7, 0.09, 'triangle');
+      playDrum(bt, b === 0 ? 0.20 : 0.09);
+    }
+  }
+
+  return t + 20 * B; // devuelve el tiempo donde termina este bloque
+}
+
+let miNextTime = 0;
+
+function startMusic() {
+  initAudio();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  musicPlaying = true;
+  document.getElementById('music-btn').textContent = '🔇 Música';
+  miNextTime = audioCtx.currentTime + 0.1;
+
+  function scheduleLoop() {
+    if (!musicPlaying) return;
+    while (miNextTime < audioCtx.currentTime + 3.0) {
+      miNextTime = scheduleMissionImpossible(miNextTime);
+    }
+    musicInterval = setTimeout(scheduleLoop, 800);
+  }
+  scheduleLoop();
+}
+
+function stopMusic() {
+  musicPlaying = false;
+  clearTimeout(musicInterval);
+  musicNodes.forEach(n => { try { n.stop(); } catch(e){} });
+  musicNodes = [];
+  const btn = document.getElementById('music-btn');
+  if (btn) btn.textContent = '🔊 Música';
+}
+
+function toggleMusic() {
+  if (musicPlaying) { stopMusic(); } else { startMusic(); }
+}
+
+// Inicializar
+document.addEventListener('DOMContentLoaded', () => {
+  updateTimerDisplay();
+});
+</script>
+</body>
+</html>
